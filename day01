@@ -1,0 +1,51 @@
+1.聚合工程和SSM框架的搭建
+    采用IDEA在创建聚合工程时需要注意一下几点：
+        1.打包方式：
+            POM: 聚合工程父目录采用的打包方式,进行依赖和模块管理.
+            JAR: 常规java类的打包方式,压缩多个文件,有利于JVM直接调用
+            WAR: web程序打包方式,运行在服务端,发布在Tomcat的webapp目录下,启动时自动解压
+        2.层次结构:
+            taotao-parent       父工程,用于依赖版本号管理,packaging = "pom"
+                |- taotao-common    相关工具类,存放常用的通用工具,packaging = "jar"
+                |- taotao-manager   业务主要负责模块,也是聚合工程,packaging = "pom"
+                    |- taotao-manager-pojo  与table相对应的简单pojo类,packaging = "jar"
+                    |- taotao-manager-dao   负责与数据库进行相关操作,采用mybatis框架,packaging = "jar"
+                    |- taotao-manager-service   服务层常用与承上启下,常采用接口+实现类的方法去实现,packaging = "jar"
+                    |- taotao-manager-web   表现层接收用户的请求进行接收处理,采用springmvc框架,packaging = "war"
+        3.配置文件:
+            resource
+                mybatis
+                    |- SqlMapConfig.xml     配置mybatis的相关配置,与spring整合后该文件会缩减很多内容
+                spring
+                    |- applicationContext-dao.xml       配置数据源,数据库连接池,mapper文件扫描等
+                    |- applicationContext-service.xml   配置注解扫描
+                    |- applicationContext-trans.xml     配置事务相关操作,切面,通知等
+                    |- springmvc.xml                    配置包扫描器,注解驱动,视图解析器
+                properties
+                    |- db.properties    数据库相关配置文件
+            web.xml     初始化spring容器,过滤器,前端控制器等
+        4.遇到的问题
+            聚合工程创建时根据所需将子模块加入父工程,构建层次清晰的聚合工程
+
+            框架搭建完成后测试运行需要安装taotao-parent,taotao-common
+            
+            mapper中的xml文件找不到406错误的解决方法
+                由于项目部署是默认去加载resources文件夹下的相关配置文件,而通过mybatis逆向工程生成的mapper文件
+                并不在resources目录下所以试运行会出现406的错误
+                解决方案：
+                    在taotao-manager-dao的pom.xml文件中添加：
+                        <!-- 如果不添加此节点mybatis的mapper.xml文件都会被漏掉。 -->
+                        <build>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/java</directory>
+                                    <includes>
+                                        <include>**/*.properties</include>
+                                        <include>**/*.xml</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </build>
+                    </project>
+
